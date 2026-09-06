@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from app.domain.agent import AgentState, EnvironmentalAgent
 from app.domain.mission import Mission
 from app.domain.swarm import Swarm, SwarmObjective
+from app.domain.mission_state import MissionState
 from app.services.agents.formation import choose_formation
 from app.services.agents.matching import agent_matcher
 
@@ -20,6 +21,7 @@ class SwarmCoordinator:
         agents: list[EnvironmentalAgent],
         minimum_agents: int = 1,
     ) -> SwarmAssignment | None:
+
         matches = agent_matcher.match(
             mission=mission,
             agents=agents,
@@ -39,7 +41,8 @@ class SwarmCoordinator:
                 agent.current_mission_id = mission.id
 
         mission.assigned_agents = selected
-        mission.status = "assigned"
+
+        mission.status = MissionState.ASSIGNED
 
         formation = choose_formation(
             objective=mission.objective,
@@ -53,6 +56,10 @@ class SwarmCoordinator:
                 type=mission.objective,
                 target_region_id=mission.region_id,
                 priority=mission.priority,
+                minimum_agents=minimum_agents,
+                required_capabilities=list(
+                    mission.required_capabilities
+                ),
             ),
             formation=formation.value,
             coverage=0.0,

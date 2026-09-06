@@ -29,3 +29,7 @@ class Mission:
     expires_at: datetime | None = None
 
     failure_reason: str | None = None
+
+    def __post_init__(self) -> None:
+        if isinstance(self.status, str):
+            self.status = MissionState(self.status)

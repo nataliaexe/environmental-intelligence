@@ -15,6 +15,7 @@ class SafetyEngine:
         risk_score: float,
         policy: ResponsePolicy,
     ) -> AuthorizationDecision:
+
         if agent.trust_score < 0.5:
             return AuthorizationDecision(
                 status=AuthorizationStatus.DENIED,
@@ -33,13 +34,24 @@ class SafetyEngine:
             if policy.requires_human_confirmation:
                 return AuthorizationDecision(
                     status=AuthorizationStatus.REQUIRES_HUMAN,
-                    reason="mission_risk_requires_human_confirmation",
+                    reason=(
+                        "mission_risk_requires_human_confirmation"
+                    ),
                     policy_id=policy.hazard_id,
                 )
 
             return AuthorizationDecision(
                 status=AuthorizationStatus.DENIED,
-                reason="environmental_risk_exceeds_agent_limit",
+                reason=(
+                    "environmental_risk_exceeds_agent_limit"
+                ),
+                policy_id=policy.hazard_id,
+            )
+
+        if policy.requires_human_confirmation:
+            return AuthorizationDecision(
+                status=AuthorizationStatus.REQUIRES_HUMAN,
+                reason="policy_requires_human_confirmation",
                 policy_id=policy.hazard_id,
             )
 
