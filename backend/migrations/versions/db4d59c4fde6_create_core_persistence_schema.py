@@ -1,0 +1,457 @@
+"""create core persistence schema
+
+Revision ID: db4d59c4fde6
+Revises:
+Create Date: 2026-09-06 05:11:06.247950
+
+"""
+from typing import Sequence, Union
+
+from alembic import op
+import sqlalchemy as sa
+
+
+revision: str = "db4d59c4fde6"
+down_revision: Union[str, Sequence[str], None] = None
+branch_labels = None
+depends_on = None
+
+
+def upgrade() -> None:
+    op.create_table(
+        "agents",
+        sa.Column(
+            "id",
+            sa.String(length=64),
+            nullable=False,
+        ),
+        sa.Column(
+            "name",
+            sa.String(length=255),
+            nullable=False,
+        ),
+        sa.Column(
+            "state",
+            sa.String(length=50),
+            nullable=False,
+        ),
+        sa.Column(
+            "energy_level",
+            sa.Float(),
+            nullable=False,
+        ),
+        sa.Column(
+            "energy_health",
+            sa.Float(),
+            nullable=False,
+        ),
+        sa.Column(
+            "trust_score",
+            sa.Float(),
+            nullable=False,
+        ),
+        sa.Column(
+            "x",
+            sa.Float(),
+            nullable=False,
+        ),
+        sa.Column(
+            "y",
+            sa.Float(),
+            nullable=False,
+        ),
+        sa.Column(
+            "z",
+            sa.Float(),
+            nullable=False,
+        ),
+        sa.Column(
+            "current_mission_id",
+            sa.String(length=64),
+            nullable=True,
+        ),
+        sa.PrimaryKeyConstraint("id"),
+    )
+
+    op.create_table(
+        "regions",
+        sa.Column(
+            "id",
+            sa.String(length=64),
+            nullable=False,
+        ),
+        sa.Column(
+            "name",
+            sa.String(length=255),
+            nullable=False,
+        ),
+        sa.Column(
+            "latitude",
+            sa.Float(),
+            nullable=False,
+        ),
+        sa.Column(
+            "longitude",
+            sa.Float(),
+            nullable=False,
+        ),
+        sa.PrimaryKeyConstraint("id"),
+    )
+
+    op.create_table(
+        "environmental_events",
+        sa.Column(
+            "id",
+            sa.String(length=64),
+            nullable=False,
+        ),
+        sa.Column(
+            "region_id",
+            sa.String(length=64),
+            nullable=False,
+        ),
+        sa.Column(
+            "event_type",
+            sa.String(length=100),
+            nullable=False,
+        ),
+        sa.Column(
+            "severity",
+            sa.String(length=50),
+            nullable=False,
+        ),
+        sa.Column(
+            "confidence",
+            sa.Float(),
+            nullable=False,
+        ),
+        sa.Column(
+            "status",
+            sa.String(length=50),
+            nullable=False,
+        ),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            nullable=False,
+        ),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            nullable=False,
+        ),
+        sa.PrimaryKeyConstraint("id"),
+    )
+
+    op.create_index(
+        "ix_environmental_events_region_id",
+        "environmental_events",
+        ["region_id"],
+        unique=False,
+    )
+
+    op.create_table(
+        "missions",
+        sa.Column(
+            "id",
+            sa.String(length=64),
+            nullable=False,
+        ),
+        sa.Column(
+            "objective",
+            sa.String(length=255),
+            nullable=False,
+        ),
+        sa.Column(
+            "region_id",
+            sa.String(length=64),
+            nullable=False,
+        ),
+        sa.Column(
+            "priority",
+            sa.Float(),
+            nullable=False,
+        ),
+        sa.Column(
+            "status",
+            sa.String(length=50),
+            nullable=False,
+        ),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            nullable=True,
+        ),
+        sa.Column(
+            "started_at",
+            sa.DateTime(timezone=True),
+            nullable=True,
+        ),
+        sa.Column(
+            "completed_at",
+            sa.DateTime(timezone=True),
+            nullable=True,
+        ),
+        sa.Column(
+            "expires_at",
+            sa.DateTime(timezone=True),
+            nullable=True,
+        ),
+        sa.Column(
+            "failure_reason",
+            sa.String(length=500),
+            nullable=True,
+        ),
+        sa.PrimaryKeyConstraint("id"),
+    )
+
+    op.create_index(
+        "ix_missions_region_id",
+        "missions",
+        ["region_id"],
+        unique=False,
+    )
+
+    op.create_table(
+        "observations",
+        sa.Column(
+            "id",
+            sa.String(length=64),
+            nullable=False,
+        ),
+        sa.Column(
+            "region_id",
+            sa.String(length=64),
+            nullable=False,
+        ),
+        sa.Column(
+            "source",
+            sa.String(length=100),
+            nullable=False,
+        ),
+        sa.Column(
+            "variable",
+            sa.String(length=100),
+            nullable=False,
+        ),
+        sa.Column(
+            "value",
+            sa.Float(),
+            nullable=False,
+        ),
+        sa.Column(
+            "confidence",
+            sa.Float(),
+            nullable=False,
+        ),
+        sa.Column(
+            "occurred_at",
+            sa.DateTime(timezone=True),
+            nullable=False,
+        ),
+        sa.Column(
+            "received_at",
+            sa.DateTime(timezone=True),
+            nullable=False,
+        ),
+        sa.Column(
+            "processed_at",
+            sa.DateTime(timezone=True),
+            nullable=True,
+        ),
+        sa.Column(
+            "vector_clock",
+            sa.String(length=2000),
+            nullable=True,
+        ),
+        sa.PrimaryKeyConstraint("id"),
+    )
+
+    op.create_index(
+        "ix_observations_occurred_at",
+        "observations",
+        ["occurred_at"],
+        unique=False,
+    )
+
+    op.create_index(
+        "ix_observations_region_id",
+        "observations",
+        ["region_id"],
+        unique=False,
+    )
+
+    op.create_table(
+        "security_events",
+        sa.Column(
+            "id",
+            sa.String(length=64),
+            nullable=False,
+        ),
+        sa.Column(
+            "agent_id",
+            sa.String(length=64),
+            nullable=True,
+        ),
+        sa.Column(
+            "event_type",
+            sa.String(length=100),
+            nullable=False,
+        ),
+        sa.Column(
+            "severity",
+            sa.String(length=50),
+            nullable=False,
+        ),
+        sa.Column(
+            "reason",
+            sa.String(length=1000),
+            nullable=False,
+        ),
+        sa.Column(
+            "timestamp",
+            sa.DateTime(timezone=True),
+            nullable=False,
+        ),
+        sa.PrimaryKeyConstraint("id"),
+    )
+
+    op.create_index(
+        "ix_security_events_agent_id",
+        "security_events",
+        ["agent_id"],
+        unique=False,
+    )
+
+    op.create_table(
+        "sensors",
+        sa.Column(
+            "id",
+            sa.String(length=64),
+            nullable=False,
+        ),
+        sa.Column(
+            "region_id",
+            sa.String(length=64),
+            nullable=False,
+        ),
+        sa.Column(
+            "name",
+            sa.String(length=255),
+            nullable=False,
+        ),
+        sa.Column(
+            "sensor_type",
+            sa.String(length=100),
+            nullable=False,
+        ),
+        sa.Column(
+            "status",
+            sa.String(length=50),
+            nullable=False,
+        ),
+        sa.PrimaryKeyConstraint("id"),
+    )
+
+    op.create_index(
+        "ix_sensors_region_id",
+        "sensors",
+        ["region_id"],
+        unique=False,
+    )
+
+    op.create_table(
+        "telemetry",
+        sa.Column(
+            "timestamp",
+            sa.DateTime(timezone=True),
+            nullable=False,
+        ),
+        sa.Column(
+            "sensor_id",
+            sa.String(length=64),
+            nullable=False,
+        ),
+        sa.Column(
+            "region_id",
+            sa.String(length=64),
+            nullable=False,
+        ),
+        sa.Column(
+            "temperature",
+            sa.Float(),
+            nullable=False,
+        ),
+        sa.Column(
+            "humidity",
+            sa.Float(),
+            nullable=False,
+        ),
+        sa.Column(
+            "soil_moisture",
+            sa.Float(),
+            nullable=False,
+        ),
+        sa.Column(
+            "light",
+            sa.Float(),
+            nullable=False,
+        ),
+        sa.PrimaryKeyConstraint(
+            "timestamp",
+            "sensor_id",
+        ),
+    )
+
+    op.create_index(
+        "ix_telemetry_region_id",
+        "telemetry",
+        ["region_id"],
+        unique=False,
+    )
+
+
+def downgrade() -> None:
+    op.drop_index(
+        "ix_telemetry_region_id",
+        table_name="telemetry",
+    )
+    op.drop_table("telemetry")
+
+    op.drop_index(
+        "ix_sensors_region_id",
+        table_name="sensors",
+    )
+    op.drop_table("sensors")
+
+    op.drop_index(
+        "ix_security_events_agent_id",
+        table_name="security_events",
+    )
+    op.drop_table("security_events")
+
+    op.drop_table("regions")
+
+    op.drop_index(
+        "ix_observations_region_id",
+        table_name="observations",
+    )
+    op.drop_index(
+        "ix_observations_occurred_at",
+        table_name="observations",
+    )
+    op.drop_table("observations")
+
+    op.drop_index(
+        "ix_missions_region_id",
+        table_name="missions",
+    )
+    op.drop_table("missions")
+
+    op.drop_index(
+        "ix_environmental_events_region_id",
+        table_name="environmental_events",
+    )
+    op.drop_table("environmental_events")
+
+    op.drop_table("agents")
