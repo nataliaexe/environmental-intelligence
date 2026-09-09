@@ -1,14 +1,14 @@
 from dataclasses import dataclass
 
 from app.domain.agent import EnvironmentalAgent
-from simulator.swarm.agent_state import SimulatedAgent
-from simulator.swarm.vector import Vector2
 
 
 @dataclass
 class AgentRuntime:
     domain: EnvironmentalAgent
-    simulation: SimulatedAgent
+    position_x: float
+    position_y: float
+    energy: float
 
     @classmethod
     def from_domain(
@@ -17,25 +17,20 @@ class AgentRuntime:
     ) -> "AgentRuntime":
         return cls(
             domain=agent,
-            simulation=SimulatedAgent(
-                agent_id=agent.id,
-                position=Vector2(
-                    agent.localization.x,
-                    agent.localization.y,
-                ),
-                energy=agent.energy.level,
-            ),
+            position_x=agent.localization.x,
+            position_y=agent.localization.y,
+            energy=agent.energy.level,
         )
 
     def sync_to_domain(self) -> None:
         self.domain.localization.x = (
-            self.simulation.position.x
+            self.position_x
         )
 
         self.domain.localization.y = (
-            self.simulation.position.y
+            self.position_y
         )
 
         self.domain.energy.level = (
-            self.simulation.energy
+            self.energy
         )

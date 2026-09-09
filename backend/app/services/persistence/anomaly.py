@@ -12,13 +12,13 @@ class AnomalyPersistenceService:
         self,
         session: Session,
         anomaly: Anomaly,
-    ) -> None:
-
-        anomaly_repository.add(
+    ):
+        return anomaly_repository.add(
             session=session,
             anomaly_id=anomaly.id,
             region_id=anomaly.region_id,
-            sensor_id=anomaly.sensor_id,
+            source_type=anomaly.source_type,
+            source_id=anomaly.source_id,
             timestamp=anomaly.timestamp,
             anomaly_type=anomaly.anomaly_type,
             severity=anomaly.severity,
@@ -27,6 +27,4 @@ class AnomalyPersistenceService:
         )
 
 
-anomaly_persistence = (
-    AnomalyPersistenceService()
-)
+anomaly_persistence = AnomalyPersistenceService()

@@ -1,6 +1,6 @@
-from simulator.swarm.behavior_profile import BehaviorProfile
-from simulator.swarm.behaviors.profiles.defaults import get_profile
-
+from app.domain.simulation_contract import (
+    SimulationBehaviorProfile,
+)
 from app.domain.swarm import SwarmObjective
 
 
@@ -9,8 +9,8 @@ class ObjectiveResolver:
     def resolve_behavior(
         self,
         objective: SwarmObjective,
-    ) -> BehaviorProfile:
-        return get_profile(
+    ) -> SimulationBehaviorProfile:
+        return SimulationBehaviorProfile(
             objective.type
         )
 

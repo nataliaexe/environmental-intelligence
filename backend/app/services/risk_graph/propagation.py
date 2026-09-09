@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from math import exp
 
 from app.services.risk_graph.model import RiskGraph
 
@@ -11,6 +12,8 @@ class RiskPropagation:
 
     path: tuple[str, ...]
 
+    contributing_paths: tuple[tuple[str, ...], ...]
+
 
 class RiskGraphEngine:
 
@@ -21,7 +24,10 @@ class RiskGraphEngine:
         max_depth: int = 3,
     ) -> list[RiskPropagation]:
 
-        results: list[RiskPropagation] = []
+        aggregated: dict[
+            str,
+            dict,
+        ] = {}
 
         queue: list[
             tuple[str, float, tuple[str, ...], int]
@@ -51,14 +57,16 @@ class RiskGraphEngine:
 
             for edge in outgoing:
 
-                propagated = (
-                    score
-                    * edge.probability_multiplier
+                propagated = self._attenuate(
+                    score=score,
+                    multiplier=(
+                        edge.probability_multiplier
+                    ),
                 )
 
                 propagated = min(
                     propagated,
-                    1.0,
+                    0.999,
                 )
 
                 new_path = (
@@ -66,16 +74,26 @@ class RiskGraphEngine:
                     edge.target,
                 )
 
-                results.append(
-                    RiskPropagation(
-                        hazard=edge.target,
-                        propagated_score=round(
-                            propagated,
-                            4,
-                        ),
-                        path=new_path,
+                target = edge.target
+
+                if target not in aggregated:
+                    aggregated[target] = {
+                        "max_score": propagated,
+                        "paths": [new_path],
+                    }
+                else:
+                    aggregated[target]["max_score"] = max(
+                        aggregated[target]["max_score"],
+                        propagated,
                     )
-                )
+
+                    if (
+                        new_path
+                        not in aggregated[target]["paths"]
+                    ):
+                        aggregated[target]["paths"].append(
+                            new_path
+                        )
 
                 queue.append(
                     (
@@ -86,7 +104,50 @@ class RiskGraphEngine:
                     )
                 )
 
+        results: list[RiskPropagation] = []
+
+        for hazard, data in aggregated.items():
+            results.append(
+                RiskPropagation(
+                    hazard=hazard,
+                    propagated_score=round(
+                        data["max_score"],
+                        4,
+                    ),
+                    path=data["paths"][0],
+                    contributing_paths=tuple(
+                        data["paths"]
+                    ),
+                )
+            )
+
         return results
+
+    @staticmethod
+    def _attenuate(
+        score: float,
+        multiplier: float,
+    ) -> float:
+        if score <= 0:
+            return 0.0
+
+        if score >= 1.0:
+            return 1.0
+
+        # Logistic attenuation:
+        # preserves differentiation, monotonic,
+        # approaches 1.0 asymptotically.
+        logit = (
+            score / (1.0 - score)
+        )
+
+        adjusted = (
+            logit * multiplier
+        )
+
+        return (
+            adjusted / (1.0 + adjusted)
+        )
 
 
 risk_graph_engine = RiskGraphEngine()

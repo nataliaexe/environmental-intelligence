@@ -1,40 +1,56 @@
-from simulator.environment import EnvironmentSimulator
-from simulator.scenarios.types import ScenarioType
+from app.domain.simulation_contract import (
+    SimulationScenarioType,
+)
 
 
 class SimulationService:
     def __init__(self) -> None:
-        self.simulator = EnvironmentSimulator(seed=42)
+        self._scenario: SimulationScenarioType | None = (
+            None
+        )
+        self._active: bool = False
+        self._elapsed_steps: int = 0
 
-    def start(self, scenario: ScenarioType) -> dict:
-        self.simulator.start_scenario(scenario)
-
-        state = self.simulator.scenario_engine.state
+    def start(
+        self,
+        scenario: SimulationScenarioType,
+    ) -> dict:
+        self._scenario = scenario
+        self._active = True
+        self._elapsed_steps = 0
 
         return {
-            "scenario": state.scenario,
-            "active": state.active,
-            "elapsed_steps": state.elapsed_steps,
+            "scenario": (
+                self._scenario.value
+                if self._scenario
+                else None
+            ),
+            "active": self._active,
+            "elapsed_steps": self._elapsed_steps,
         }
 
     def stop(self) -> dict:
-        self.simulator.stop_scenario()
-
-        state = self.simulator.scenario_engine.state
+        self._active = False
 
         return {
-            "scenario": state.scenario,
-            "active": state.active,
-            "elapsed_steps": state.elapsed_steps,
+            "scenario": (
+                self._scenario.value
+                if self._scenario
+                else None
+            ),
+            "active": self._active,
+            "elapsed_steps": self._elapsed_steps,
         }
 
     def status(self) -> dict:
-        state = self.simulator.scenario_engine.state
-
         return {
-            "scenario": state.scenario,
-            "active": state.active,
-            "elapsed_steps": state.elapsed_steps,
+            "scenario": (
+                self._scenario.value
+                if self._scenario
+                else None
+            ),
+            "active": self._active,
+            "elapsed_steps": self._elapsed_steps,
         }
 
 

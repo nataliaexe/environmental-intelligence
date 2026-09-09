@@ -5,9 +5,6 @@ from app.domain.anomaly import Anomaly
 from app.infrastructure.database.models.environment_snapshot import (
     EnvironmentSnapshotModel,
 )
-from app.infrastructure.database.repositories.environment_snapshot import (
-    environment_snapshot_repository,
-)
 
 
 class WorldModelAnomalyService:
@@ -37,7 +34,8 @@ class WorldModelAnomalyService:
                 Anomaly(
                     id=f"ANOM-{uuid4().hex[:12]}",
                     region_id=snapshot.region_id,
-                    sensor_id="world_model",
+                    source_type="world_model",
+                    source_id=snapshot.id,
                     timestamp=snapshot.timestamp
                     or datetime.now(timezone.utc),
                     anomaly_type="high_temperature",
@@ -71,7 +69,8 @@ class WorldModelAnomalyService:
                 Anomaly(
                     id=f"ANOM-{uuid4().hex[:12]}",
                     region_id=snapshot.region_id,
-                    sensor_id="world_model",
+                    source_type="world_model",
+                    source_id=snapshot.id,
                     timestamp=snapshot.timestamp
                     or datetime.now(timezone.utc),
                     anomaly_type="low_soil_moisture",

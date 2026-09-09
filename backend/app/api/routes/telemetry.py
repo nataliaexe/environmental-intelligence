@@ -19,6 +19,20 @@ router = APIRouter(
 )
 
 
+def _telemetry_to_dict(record) -> dict:
+    return {
+        "sensor_id": record.sensor_id,
+        "region_id": record.region_id,
+        "occurred_at": record.occurred_at,
+        "received_at": record.received_at,
+        "processed_at": record.processed_at,
+        "temperature": record.temperature,
+        "humidity": record.humidity,
+        "soil_moisture": record.soil_moisture,
+        "light": record.light,
+    }
+
+
 @router.post("")
 async def receive_telemetry(
     payload: TelemetryPayload,
@@ -36,7 +50,7 @@ async def receive_telemetry(
         "status": "accepted",
         "sensor_id": payload.sensor_id,
         "region_id": payload.region_id,
-        "timestamp": payload.timestamp,
+        "occurred_at": payload.timestamp,
     }
 
 
@@ -57,15 +71,7 @@ async def get_latest_telemetry(
     )
 
     return [
-        {
-            "sensor_id": record.sensor_id,
-            "region_id": record.region_id,
-            "timestamp": record.timestamp,
-            "temperature": record.temperature,
-            "humidity": record.humidity,
-            "soil_moisture": record.soil_moisture,
-            "light": record.light,
-        }
+        _telemetry_to_dict(record)
         for record in records
     ]
 
@@ -84,12 +90,4 @@ async def get_sensor_telemetry(
     if record is None:
         return None
 
-    return {
-        "sensor_id": record.sensor_id,
-        "region_id": record.region_id,
-        "timestamp": record.timestamp,
-        "temperature": record.temperature,
-        "humidity": record.humidity,
-        "soil_moisture": record.soil_moisture,
-        "light": record.light,
-    }
+    return _telemetry_to_dict(record)

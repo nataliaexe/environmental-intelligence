@@ -1,9 +1,7 @@
 from dataclasses import dataclass
 
 from app.domain.agent import EnvironmentalAgent
-from app.domain.authorization import (
-    AuthorizationDecision,
-)
+from app.domain.authorization import AuthorizationDecision
 from app.domain.mission import Mission
 from app.services.safety.engine import safety_engine
 from app.services.safety.policies import get_policy
@@ -23,6 +21,7 @@ class MissionEvaluator:
         agent: EnvironmentalAgent,
         hazard_id: str,
         risk_score: float,
+        confidence: float,
     ) -> MissionEvaluation:
         policy = get_policy(hazard_id)
 
@@ -31,6 +30,7 @@ class MissionEvaluator:
             agent=agent,
             risk_score=risk_score,
             policy=policy,
+            confidence=confidence,
         )
 
         return MissionEvaluation(

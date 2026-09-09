@@ -1,18 +1,27 @@
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from uuid import uuid4
 
 from app.domain.event import EnvironmentalEvent
+from app.domain.risk import RiskAssessment
 from app.services.anomaly.fusion import AnomalyAssessment
-from app.services.events import event_store
 from app.services.risk.engine import risk_engine
 
 
+@dataclass(frozen=True)
+class EventProcessingResult:
+    event: EnvironmentalEvent
+    risk: RiskAssessment
+
+
 class EventEngine:
-    def process(
+
+    def process_with_risk(
         self,
         region_id: str,
         assessment: AnomalyAssessment,
-    ) -> EnvironmentalEvent | None:
+    ) -> EventProcessingResult | None:
+
         if not assessment.anomaly:
             return None
 
@@ -35,18 +44,26 @@ class EventEngine:
             evidence=risk.contributing_factors,
         )
 
-        event_store.add(event)
+        return EventProcessingResult(
+            event=event,
+            risk=risk,
+        )
 
-        return event
-
-    def active_events(self) -> list[EnvironmentalEvent]:
-        return event_store.active()
-
-    def events_by_region(
+    def process(
         self,
         region_id: str,
-    ) -> list[EnvironmentalEvent]:
-        return event_store.by_region(region_id)
+        assessment: AnomalyAssessment,
+    ) -> EnvironmentalEvent | None:
+
+        result = self.process_with_risk(
+            region_id=region_id,
+            assessment=assessment,
+        )
+
+        if result is None:
+            return None
+
+        return result.event
 
 
 event_engine = EventEngine()

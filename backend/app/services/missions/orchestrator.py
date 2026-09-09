@@ -1,19 +1,17 @@
 from app.domain.agent import EnvironmentalAgent
+from app.domain.authorization import (
+    AuthorizationDecision,
+    AuthorizationStatus,
+)
 from app.domain.mission import Mission
 from app.domain.mission_state import MissionState
-from app.domain.authorization import AuthorizationStatus
 
 from app.services.agents.coordinator import swarm_coordinator
 from app.services.agents.matching import agent_matcher
 from app.services.agents.tasks import task_service
-
 from app.services.missions.lifecycle import mission_lifecycle
-
+from app.services.missions.orchestration import OrchestrationResult
 from app.services.missions.planner import mission_planner
-from app.services.missions.orchestration import (
-    OrchestrationResult,
-)
-
 from app.services.safety.evaluator import mission_evaluator
 
 
@@ -24,9 +22,7 @@ class MissionOrchestrator:
         mission: Mission,
     ) -> Mission:
 
-        mission_planner.plan(
-            mission
-        )
+        mission_planner.plan(mission)
 
         mission_lifecycle.transition(
             mission,
@@ -42,7 +38,8 @@ class MissionOrchestrator:
         agents: list[EnvironmentalAgent],
         hazard_id: str,
         risk_score: float,
-    ) -> list:
+        confidence: float,
+    ) -> list[AuthorizationDecision]:
 
         matches = agent_matcher.match(
             mission=mission,
@@ -70,11 +67,10 @@ class MissionOrchestrator:
                 agent=agent,
                 hazard_id=hazard_id,
                 risk_score=risk_score,
+                confidence=confidence,
             )
 
-            decisions.append(
-                evaluation.decision
-            )
+            decisions.append(evaluation.decision)
 
         return decisions
 
@@ -83,23 +79,53 @@ class MissionOrchestrator:
         mission: Mission,
         agents: list[EnvironmentalAgent],
         minimum_agents: int,
-        authorization_decisions: list | None = None,
+        authorization_decisions: list[AuthorizationDecision],
     ):
 
-        if authorization_decisions is not None:
+        if not authorization_decisions:
+            mission_lifecycle.transition(
+                mission,
+                MissionState.BLOCKED,
+                "missing_authorization_decisions",
+            )
+            return None
 
-            if any(
-                decision.status
-                != AuthorizationStatus.AUTHORIZED
-                for decision in authorization_decisions
-            ):
+        if all(
+            decision.status == AuthorizationStatus.DENIED
+            for decision in authorization_decisions
+        ):
+            mission_lifecycle.transition(
+                mission,
+                MissionState.BLOCKED,
+                "safety_authorization_denied",
+            )
+            return None
+
+        if any(
+            decision.status == AuthorizationStatus.REQUIRES_HUMAN
+            for decision in authorization_decisions
+        ):
+            if mission.status != MissionState.AWAITING_APPROVAL:
                 mission_lifecycle.transition(
                     mission,
-                    MissionState.BLOCKED,
-                    "safety_authorization_not_granted",
+                    MissionState.AWAITING_APPROVAL,
+                    "human_confirmation_required",
                 )
+            return None
 
-                return None
+        authorized_decisions = [
+            decision
+            for decision in authorization_decisions
+            if decision.status == AuthorizationStatus.AUTHORIZED
+        ]
+
+        if len(authorized_decisions) < minimum_agents:
+            mission_lifecycle.transition(
+                mission,
+                MissionState.BLOCKED,
+                "insufficient_authorized_agents",
+            )
+            return None
 
         assignment = swarm_coordinator.assign(
             mission=mission,
@@ -108,13 +134,11 @@ class MissionOrchestrator:
         )
 
         if assignment is None:
-
             mission_lifecycle.transition(
                 mission,
                 MissionState.BLOCKED,
                 "insufficient_compatible_agents",
             )
-
             return None
 
         mission_lifecycle.transition(
@@ -125,11 +149,35 @@ class MissionOrchestrator:
 
         return assignment
 
+    def approve(
+        self,
+        mission: Mission,
+    ) -> Mission | None:
+
+        if mission.status != MissionState.AWAITING_APPROVAL:
+            return None
+
+        mission_lifecycle.transition(
+            mission,
+            MissionState.AUTHORIZED,
+            "human_approval_received",
+        )
+
+        return mission
+
     def execute(
         self,
         mission: Mission,
         agents: list[EnvironmentalAgent],
     ) -> list:
+
+        if mission.status != MissionState.ASSIGNED:
+            mission_lifecycle.transition(
+                mission,
+                MissionState.FAILED,
+                "mission_not_assigned",
+            )
+            return []
 
         tasks = task_service.create_tasks(
             mission=mission,
@@ -137,13 +185,11 @@ class MissionOrchestrator:
         )
 
         if not tasks:
-
             mission_lifecycle.transition(
                 mission,
                 MissionState.FAILED,
                 "no_tasks_created",
             )
-
             return []
 
         mission_lifecycle.transition(
@@ -205,15 +251,12 @@ class MissionOrchestrator:
         )
 
         if result.success and result.confidence >= 0.7:
-
             mission_lifecycle.transition(
                 mission,
                 MissionState.COMPLETED,
                 "mission_verified",
             )
-
         else:
-
             mission_lifecycle.transition(
                 mission,
                 MissionState.EXECUTING,

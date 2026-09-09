@@ -16,7 +16,9 @@ class TelemetryRepository:
         *,
         sensor_id: str,
         region_id: str,
-        timestamp: datetime,
+        occurred_at: datetime,
+        received_at: datetime,
+        processed_at: datetime | None = None,
         temperature: float,
         humidity: float,
         soil_moisture: float,
@@ -24,13 +26,16 @@ class TelemetryRepository:
     ) -> TelemetryModel:
 
         telemetry = TelemetryModel(
-            timestamp=timestamp,
+            timestamp=occurred_at,
             sensor_id=sensor_id,
             region_id=region_id,
             temperature=temperature,
             humidity=humidity,
             soil_moisture=soil_moisture,
             light=light,
+            occurred_at=occurred_at,
+            received_at=received_at,
+            processed_at=processed_at,
         )
 
         session.add(telemetry)
@@ -45,7 +50,9 @@ class TelemetryRepository:
 
         statement = (
             select(TelemetryModel)
-            .order_by(desc(TelemetryModel.timestamp))
+            .order_by(
+                desc(TelemetryModel.occurred_at)
+            )
             .limit(limit)
         )
 
@@ -63,7 +70,7 @@ class TelemetryRepository:
                 TelemetryModel.sensor_id == sensor_id
             )
             .order_by(
-                desc(TelemetryModel.timestamp)
+                desc(TelemetryModel.occurred_at)
             )
             .limit(1)
         )

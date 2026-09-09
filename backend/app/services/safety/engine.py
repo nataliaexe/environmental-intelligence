@@ -14,6 +14,7 @@ class SafetyEngine:
         agent: EnvironmentalAgent,
         risk_score: float,
         policy: ResponsePolicy,
+        confidence: float,
     ) -> AuthorizationDecision:
 
         if agent.trust_score < 0.5:
@@ -27,6 +28,13 @@ class SafetyEngine:
             return AuthorizationDecision(
                 status=AuthorizationStatus.DENIED,
                 reason="insufficient_agent_energy",
+                policy_id=policy.hazard_id,
+            )
+
+        if confidence < policy.minimum_confidence:
+            return AuthorizationDecision(
+                status=AuthorizationStatus.DENIED,
+                reason="confidence_below_policy_minimum",
                 policy_id=policy.hazard_id,
             )
 

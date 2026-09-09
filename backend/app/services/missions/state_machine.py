@@ -12,6 +12,13 @@ ALLOWED_TRANSITIONS: dict[
 
     MissionState.PLANNED: {
         MissionState.AUTHORIZED,
+        MissionState.AWAITING_APPROVAL,
+        MissionState.BLOCKED,
+        MissionState.CANCELLED,
+    },
+
+    MissionState.AWAITING_APPROVAL: {
+        MissionState.AUTHORIZED,
         MissionState.BLOCKED,
         MissionState.CANCELLED,
     },

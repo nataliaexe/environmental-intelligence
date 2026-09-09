@@ -6,7 +6,9 @@ from datetime import datetime
 class Anomaly:
     id: str
     region_id: str
-    sensor_id: str
+
+    source_type: str
+    source_id: str
 
     timestamp: datetime
 

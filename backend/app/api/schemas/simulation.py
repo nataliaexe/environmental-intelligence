@@ -1,7 +1,9 @@
 from pydantic import BaseModel
 
-from simulator.scenarios.types import ScenarioType
+from app.domain.simulation_contract import (
+    SimulationScenarioType,
+)
 
 
 class ScenarioRequest(BaseModel):
-    scenario: ScenarioType
+    scenario: SimulationScenarioType

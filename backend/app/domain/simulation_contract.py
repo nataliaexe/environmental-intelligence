@@ -1,28 +1,34 @@
 from dataclasses import dataclass
-from datetime import datetime
+from enum import Enum
+
+
+class SimulationScenarioType(str, Enum):
+    HEATWAVE = "heatwave"
+    DROUGHT = "drought"
+    WILDFIRE = "wildfire"
+    FLOOD = "flood"
+    EARTHQUAKE = "earthquake"
+
+
+class SimulationBehaviorProfile(str, Enum):
+    INVESTIGATE = "investigate"
+    INCREASE_COVERAGE = "increase_coverage"
+    MAP_REGION = "map_region"
+    CREATE_RELAY = "create_relay"
+    EMERGENCY = "emergency"
+    RETURN_TO_SAFE = "return_to_safe"
 
 
 @dataclass(frozen=True)
 class SimulationRequest:
-    region_id: str
-
-    environment_version: int
-
-    scenario_id: str
-
-    duration_seconds: float
+    scenario: SimulationScenarioType
 
 
 @dataclass(frozen=True)
 class SimulationObservation:
     region_id: str
-
-    timestamp: datetime
-
+    variable: str
+    value: float
+    confidence: float
     source: str
-
-    values: dict[str, float]
-
-    confidence: dict[str, float]
-
-    agent_id: str | None = None
+    timestamp: str

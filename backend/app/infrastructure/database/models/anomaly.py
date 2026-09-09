@@ -24,7 +24,14 @@ class AnomalyModel(Base):
         index=True,
     )
 
-    sensor_id: Mapped[str] = mapped_column(
+    source_type: Mapped[str] = mapped_column(
+        String(50),
+        nullable=False,
+        index=True,
+        default="sensor",
+    )
+
+    source_id: Mapped[str] = mapped_column(
         String(64),
         nullable=False,
         index=True,

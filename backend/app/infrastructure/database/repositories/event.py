@@ -3,9 +3,7 @@ from datetime import datetime
 from sqlalchemy import desc, select
 from sqlalchemy.orm import Session
 
-from app.infrastructure.database.models.event import (
-    EventModel,
-)
+from app.infrastructure.database.models.event import EventModel
 
 
 class EventRepository:
@@ -39,6 +37,34 @@ class EventRepository:
 
         return event
 
+    def active_events(
+        self,
+        session: Session,
+    ) -> list[EventModel]:
+
+        statement = (
+            select(EventModel)
+            .where(EventModel.status == "active")
+            .order_by(desc(EventModel.created_at))
+        )
+
+        return list(session.scalars(statement).all())
+
+    def events_by_region(
+        self,
+        session: Session,
+        *,
+        region_id: str,
+    ) -> list[EventModel]:
+
+        statement = (
+            select(EventModel)
+            .where(EventModel.region_id == region_id)
+            .order_by(desc(EventModel.created_at))
+        )
+
+        return list(session.scalars(statement).all())
+
     def latest_by_region(
         self,
         session: Session,
@@ -48,12 +74,8 @@ class EventRepository:
 
         statement = (
             select(EventModel)
-            .where(
-                EventModel.region_id == region_id
-            )
-            .order_by(
-                desc(EventModel.created_at)
-            )
+            .where(EventModel.region_id == region_id)
+            .order_by(desc(EventModel.created_at))
             .limit(1)
         )
 
